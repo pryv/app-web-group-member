@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+/*
+ * Theme tokens. A deployment rebrands the app by overriding these variables
+ * (and `src/brand.tsx` for the logo); no component edits needed. The dark
+ * palette follows the operating system.
+ */
+:root {
+  color-scheme: light dark;
+  --gm-body: #f4f4f4;
+  --gm-ink: #1a1a1a;
+  --gm-muted: #4a4a4a;
+  --gm-card: #ffffff;
+  --gm-divider: #c8c8c8;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --gm-body: #131516;
+    --gm-ink: #f0f0f0;
+    --gm-muted: #a8aaae;
+    --gm-card: #1d2022;
+    --gm-divider: #2c2f33;
+  }
+}
+
+@theme {
+  /* Semantic roles (override these to rebrand) */
+  --color-primary: #5f8220;
+  --color-success: #3d8b3d;
+  --color-info: #2d68ac;
+  --color-warning: #b7791f;
+  --color-danger: #c9302c;
+
+  /* Surfaces and text: the :root variables above are the override surface. */
+  --color-body: var(--gm-body);
+  --color-ink: var(--gm-ink);
+  --color-muted: var(--gm-muted);
+  --color-card: var(--gm-card);
+  --color-divider: var(--gm-divider);
+
+  --font-sans: "Roboto", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-heading: "Roboto Condensed", var(--font-sans);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  body {
+    margin: 0;
+    background-color: var(--gm-body);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-heading);
+    font-weight: 500;
+    line-height: 1.15;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+  h3 { font-size: 1rem; margin-bottom: 0.25rem; }
+  a { color: var(--color-primary); }
+  a:hover { text-decoration: underline; }
+}

@@ -1,0 +1,45 @@
+{
+  "name": "app-web-group-member",
+  "description": "Reference static web app for members of a Pryv group account: join a group, invite patients for it and read a patient's data under an access that names the member. No backend.",
+  "version": "0.1.0",
+  "private": true,
+  "license": "BSD-3-Clause",
+  "author": "Pryv <info@pryv.com> (https://pryv.com)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "typecheck": "tsc -b",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "link:lib-js": "npm link --no-save ../lib-js/components/pryv ../lib-js/components/pryv-cmc"
+  },
+  "dependencies": {
+    "@pryv/cmc": "^3.21.0",
+    "i18next": "^26.4.2",
+    "lucide-react": "^1.21.0",
+    "pryv": "^3.17.2",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-i18next": "^17.0.15",
+    "react-router-dom": "^7.18.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@tailwindcss/vite": "^4.3.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "jsdom": "^29.1.1",
+    "oxlint": "^1.71.0",
+    "tailwindcss": "^4.3.1",
+    "typescript": "~6.0.3",
+    "vite": "^8.1.0",
+    "vitest": "^4.1.11"
+  }
+}
