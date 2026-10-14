@@ -9,6 +9,20 @@ async function expectTokenNowhere(page: Page, token: string) {
   expect(await page.content()).not.toContain(token);
 }
 
+const TOKENS = ["member-token", "membership-token", "child-token", "cap-token", "invite-token"];
+
+// Every console message of every page of the test (the sign-in pop-up included):
+// none may carry a token or a request link.
+let consoleMessages: string[] = [];
+test.beforeEach(({ context }) => {
+  consoleMessages = [];
+  context.on("console", (msg) => consoleMessages.push(`${msg.type()}: ${msg.text()}`));
+});
+test.afterEach(() => {
+  const all = consoleMessages.join("\n");
+  for (const token of TOKENS) expect(all, token).not.toContain(token);
+});
+
 test.describe("[E2E] member app, against a mocked platform", () => {
   test("[E2E1] sign-in: the auth page opens in a pop-up, the poll's answer signs the member in", async ({ page, context }) => {
     await mockPlatform(context, { pollsBeforeAccept: 1 });

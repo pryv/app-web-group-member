@@ -35,15 +35,28 @@ describe("[HOL] hand-off links", () => {
     expect(u.searchParams.get("scopeStreamId")).toBe(":_cmc:apps:practice");
   });
 
-  it("[HOL5] the account app is derived from the sign-in page when not configured", () => {
+  it("[HOL5] the account app is derived from the sign-in page when not configured and the group is on the member's platform", () => {
     expect(accountAppFromAuthUrl("https://sw.example.com/auth?key=abc")).toBe("https://sw.example.com/");
     expect(accountAppFromAuthUrl("https://host.example/app-web-user-account/auth")).toBe("https://host.example/app-web-user-account/");
     expect(accountAppFromAuthUrl("https://host.example/access")).toBeNull();
     expect(accountAppFromAuthUrl(null)).toBeNull();
-    expect(resolveAccountApp("https://configured.example/", "https://sw.example.com/auth", "https://reg.example/service/info")).toBe("https://configured.example/");
-    const derived = new URL(resolveAccountApp(null, "https://sw.example.com/auth", "https://reg.example/service/info")!);
+    const same = { memberApiEndpoint: "https://tok@bob.example.com/", groupHost: "example.com" };
+    expect(resolveAccountApp("https://configured.example/", "https://sw.example.com/auth", "https://reg.example/service/info", same)).toBe("https://configured.example/");
+    const derived = new URL(resolveAccountApp(null, "https://sw.example.com/auth", "https://reg.example/service/info", same)!);
     expect(derived.origin + derived.pathname).toBe("https://sw.example.com/");
     expect(derived.searchParams.get("pryvServiceInfoUrl")).toBe("https://reg.example/service/info");
-    expect(resolveAccountApp(null, null, "https://reg.example/service/info")).toBeNull();
+    expect(resolveAccountApp(null, null, "https://reg.example/service/info", same)).toBeNull();
+  });
+
+  it("[HOL6] a group on another platform gets no derived link (the bare request link alone); a configured one stays", () => {
+    const elsewhere = { memberApiEndpoint: "https://tok@bob.example.com/", groupHost: "other-platform.org" };
+    expect(resolveAccountApp(null, "https://sw.example.com/auth", "https://reg.example/service/info", elsewhere)).toBeNull();
+    // A host that only ends with the same letters is another platform.
+    expect(resolveAccountApp(null, "https://sw.example.com/auth", null, { memberApiEndpoint: "https://tok@bob.badexample.com/", groupHost: "example.com" })).toBeNull();
+    // Unknown group (not recorded on this browser): no derivation either.
+    expect(resolveAccountApp(null, "https://sw.example.com/auth", null, { memberApiEndpoint: "https://tok@bob.example.com/", groupHost: null })).toBeNull();
+    // Path-style platform: the member's core is the group's host itself.
+    expect(resolveAccountApp(null, "https://sw.example.com/auth", null, { memberApiEndpoint: "https://tok@example.com/bob/", groupHost: "example.com" })).toBe("https://sw.example.com/");
+    expect(resolveAccountApp("https://configured.example/", "https://sw.example.com/auth", null, elsewhere)).toBe("https://configured.example/");
   });
 });

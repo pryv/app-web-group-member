@@ -45,16 +45,37 @@ export function inviteLink(accountAppUrl: string | null, capabilityUrl: string, 
 }
 
 /**
- * The account-app base the links use: the configured one; else the one next
- * to the page the member signed in on, told which platform it serves
- * (`pryvServiceInfoUrl`, the member's own: a group on the same platform).
+ * Whether the group is on the member's platform: the member's API host is the
+ * group's host or a host under it (`bob.example.com` for `example.com`).
+ */
+export function onMemberPlatform(memberApiEndpoint: string, groupHost: string | null | undefined): boolean {
+  if (typeof groupHost !== "string" || groupHost.length === 0) return false;
+  let host: string;
+  try {
+    host = new URL(memberApiEndpoint).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  const group = groupHost.toLowerCase().replace(/\.$/, "");
+  return host === group || host.endsWith("." + group);
+}
+
+/**
+ * The account-app base the links use: the configured one; else, only when
+ * the group is on the member's platform, the one next to the page the member
+ * signed in on, told which platform it serves (`pryvServiceInfoUrl`). A group
+ * elsewhere gets no derived link: an administrator would be sent to the
+ * member's platform, and whoever signs in there would approve as the group.
+ * Null: the bare request link is shown alone.
  */
 export function resolveAccountApp(
   configured: string | null,
   signInAuthUrl: string | null | undefined,
   serviceInfoUrl: string | null,
+  platform: { memberApiEndpoint: string; groupHost: string | null | undefined },
 ): string | null {
   if (configured != null) return configured;
+  if (!onMemberPlatform(platform.memberApiEndpoint, platform.groupHost)) return null;
   const derived = accountAppFromAuthUrl(signInAuthUrl);
   if (derived == null) return null;
   return serviceInfoUrl != null ? accountAppLink(derived, "", { pryvServiceInfoUrl: serviceInfoUrl }) : derived;

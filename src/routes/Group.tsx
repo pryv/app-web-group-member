@@ -11,13 +11,20 @@ import { cmc, cmcErrorIds, type Connection } from "../lib/pryvClient";
 import { getConfig } from "../lib/config";
 import { useSignedIn } from "../lib/session";
 import { useGroups } from "../lib/groupsContext";
-import type { GroupRecord } from "../lib/groups";
+import { acceptanceTiming, isAuthError, type GroupRecord } from "../lib/groups";
 import { invitePatient, listRoster, membershipTeams, type Team, type TeamRoster } from "../lib/patients";
 import { resolveAccountApp } from "../lib/handoffLink";
 import { actorLabel, formatTime } from "../lib/display";
 import { errorId, loggableError } from "../lib/errors";
 
-/** Polls the member's inbox for the group's acceptance while the page is open. */
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * Polls the member's inbox for the group's acceptance while the page is open.
+ * A transient error is shown and the wait goes on; only an auth error stops it.
+ */
 function useWaitForAcceptance(g: GroupRecord) {
   const { connection } = useSignedIn();
   const { refresh } = useGroups();
@@ -30,7 +37,9 @@ function useWaitForAcceptance(g: GroupRecord) {
       while (!cancelled) {
         if (group == null) {
           // The group is not known on this browser: watch the request itself.
-          await new Promise((r) => setTimeout(r, 5000));
+          // `refresh` never rejects: a failed read is kept as the list's error
+          // and the loop simply reads again.
+          await sleep(acceptanceTiming.refreshMs);
           if (!cancelled) await refresh();
           continue;
         }
@@ -39,15 +48,25 @@ function useWaitForAcceptance(g: GroupRecord) {
             group,
             appCode: getConfig().appCode,
             sinceTime: g.requestedAt ?? undefined,
-            timeoutMs: 5000,
-            intervalMs: 2500,
+            timeoutMs: acceptanceTiming.roundMs,
+            intervalMs: acceptanceTiming.intervalMs,
           });
-          if (!cancelled) await refresh();
+          if (!cancelled) {
+            setError(null);
+            await refresh();
+          }
           return;
         } catch (err) {
-          if ((err as { id?: string })?.id === cmcErrorIds.CAPABILITY_TIMEOUT) continue;
-          if (!cancelled) setError(err);
-          return;
+          if ((err as { id?: string })?.id === cmcErrorIds.CAPABILITY_TIMEOUT) {
+            if (!cancelled) setError(null);
+            continue;
+          }
+          if (cancelled) return;
+          setError(err);
+          // The member's access is refused: waiting cannot succeed.
+          if (isAuthError(errorId(err))) return;
+          // A network blip or a server error: show it, and try again later.
+          await sleep(acceptanceTiming.retryMs);
         }
       }
     })();
@@ -60,9 +79,9 @@ function useWaitForAcceptance(g: GroupRecord) {
 
 function WaitingView({ g }: { g: GroupRecord }) {
   const { t, i18n } = useTranslation();
-  const { serviceInfoUrl, authUrl } = useSignedIn();
+  const { connection, serviceInfoUrl, authUrl } = useSignedIn();
   const error = useWaitForAcceptance(g);
-  const accountApp = resolveAccountApp(getConfig().accountAppUrl, authUrl, serviceInfoUrl);
+  const accountApp = resolveAccountApp(getConfig().accountAppUrl, authUrl, serviceInfoUrl, { memberApiEndpoint: connection.apiEndpoint, groupHost: g.group?.host });
   return (
     <Card>
       <h2>{t("group.waitingTitle")}</h2>
@@ -217,7 +236,7 @@ function MemberView({ g }: { g: GroupRecord }) {
   const [error, setError] = useState<unknown>(null);
   const [leaveError, setLeaveError] = useState<unknown>(null);
   const [leaving, setLeaving] = useState(false);
-  const accountApp = resolveAccountApp(getConfig().accountAppUrl, authUrl, serviceInfoUrl);
+  const accountApp = resolveAccountApp(getConfig().accountAppUrl, authUrl, serviceInfoUrl, { memberApiEndpoint: connection.apiEndpoint, groupHost: g.group?.host });
 
   const [version, setVersion] = useState(0);
   const load = useCallback(() => setVersion((v) => v + 1), []);

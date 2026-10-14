@@ -168,6 +168,26 @@ export async function listGroups(
   return buildGroupRecords(eventsOf(results[0]), eventsOf(results[1]), eventsOf(results[2]), appCode, pending);
 }
 
+/**
+ * Timings of the wait for a group's approval (milliseconds). One object so
+ * tests can shorten them.
+ */
+export const acceptanceTiming = {
+  /** Length of one `waitForMembership` round. */
+  roundMs: 5000,
+  /** Interval between inbox reads within a round. */
+  intervalMs: 2500,
+  /** Pause after an error before trying again (a network blip, a 5xx). */
+  retryMs: 15000,
+  /** Interval between re-reads when the group is not known on this browser. */
+  refreshMs: 5000,
+};
+
+/** Errors after which waiting cannot succeed: the member's own access is refused. */
+export function isAuthError(id: string | null): boolean {
+  return id === "invalid-access-token" || id === "forbidden";
+}
+
 /** A stable key for a group in an address: its request id (no credential). */
 export function groupLabel(g: Pick<GroupRecord, "group">): string {
   return g.group ? `${g.group.username}@${g.group.host}` : "";

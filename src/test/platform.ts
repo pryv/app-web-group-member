@@ -21,6 +21,8 @@ export interface PlatformState {
   patientEvents: Array<{ id: string; time: number; streamIds: string[]; type: string; content: unknown }>;
   /** What the next member-access request answers. */
   memberAccess: () => unknown;
+  /** The next reads of the inbox fail (a server error), this many times. */
+  inboxFailures: number;
   created: Array<{ endpoint: string; params: Record<string, unknown> }>;
 }
 
@@ -74,6 +76,7 @@ export function installPlatform(initial: Partial<PlatformState> = {}): PlatformS
     ],
     patientEvents: [{ id: "e1", time: NOW - 10, streamIds: ["diary"], type: "note/txt", content: "Slept well" }],
     memberAccess: () => grantedMemberAccess(),
+    inboxFailures: 0,
     created: [],
     ...initial,
   };
@@ -89,7 +92,13 @@ export function installPlatform(initial: Partial<PlatformState> = {}): PlatformS
     const streams = (params.streams as string[] | undefined) ?? [];
     if (ep === MEMBER_ENDPOINT) {
       if (method === "events.get" && streams[0] === ":_cmc:apps:demo") return { events: state.requests };
-      if (method === "events.get" && types[0] === "consent/accept-cmc") return { events: state.accepts };
+      if (method === "events.get" && types[0] === "consent/accept-cmc") {
+        if (state.inboxFailures > 0) {
+          state.inboxFailures--;
+          return { error: { id: "api-unavailable", message: "temporarily unavailable" } };
+        }
+        return { events: state.accepts };
+      }
       if (method === "events.get") return { events: [] };
       if (method === "events.getOne") return { event: state.requests.find((r) => r.id === params.id) };
       if (method === "events.create") {

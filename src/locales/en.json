@@ -24,7 +24,7 @@
     "button": "Sign in with Pryv",
     "waiting": "Answer on the sign-in page. This page continues once you are signed in.",
     "openPage": "Open the sign-in page",
-    "permissions": "The app asks to read your messaging inbox (where a group's approval arrives) and to write in {{scope}} (your membership requests). It keeps your sign-in for this browser tab only."
+    "permissions": "The app asks to read your messaging inbox (where a group's approval arrives; it also holds every consent your account has received) and to write in {{scope}} (your membership requests). It keeps your sign-in for this browser tab only."
   },
   "groups": {
     "title": "Your groups",
@@ -72,7 +72,7 @@
     "adminLink": "Link for the administrator",
     "capability": "Request link (to paste)",
     "capabilityNote": "Whoever holds this link can answer the request: hand it to the group's administrators only. It works once and expires.",
-    "inviteIntro": "Hand this to the patient: they open it in their Pryv account app and answer with their own account. The invite works once.",
+    "inviteIntro": "Hand this to the patient, who answers with their own account. The patient's link is for a patient with an account on this platform; a patient on another platform pastes the request link in the consent page of their own account app. The invite works once.",
     "patientLink": "Link for the patient",
     "inviteQrLabel": "QR code of the patient invite",
     "showQr": "Show QR code"
@@ -94,7 +94,7 @@
     "membershipGone": "This membership is no longer valid: the group may have ended it. Refresh your groups.",
     "noTeams": "Your membership holds no team yet. Ask an administrator of the group.",
     "invite": "Invite a patient",
-    "invited": "Invite created for this team. The patient's consent covers the group, and each member reads under their own name.",
+    "invited": "Invite created for this team. The patient's consent covers the group, and each member reads under their own name. Members of this team see each other's invites.",
     "patients": "Patients",
     "noPatients": "No patient has accepted an invite in this team yet.",
     "acceptedOn": "Accepted on {{date}}",
