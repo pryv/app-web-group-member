@@ -6,7 +6,7 @@ There is **no backend**: the app is static files, built on [`pryv`](https://gith
 
 The pattern, its rules and its limits are described in the Pryv guide **Group accounts** (pryv.github.io, guides). This README covers the app.
 
-> **Status: preview.** Group accounts need the open-pryv.io release that introduces them (on the group's core and on the members' cores) and `@pryv/cmc` 3.21.0. Neither is released yet, so this app cannot run against a public platform today. See [Demo](#demo).
+> **Status: preview.** Group accounts need open-pryv.io 2.0.0-rc.53 or later, on the group's core and on the members' cores. The app depends on `@pryv/cmc` 3.21.0 or later. See [Demo](#demo).
 
 ## Walkthrough
 
@@ -74,18 +74,8 @@ Invalid values are dropped, never guessed. The app uses hash routes (`#/groups/.
 
 Requires Node.js 20 or later.
 
-Until `@pryv/cmc` 3.21.0 is published, the app runs against a local checkout of [pryv/lib-js](https://github.com/pryv/lib-js) on the branch that carries it, placed next to this repository (`../lib-js`). Both `pryv` and `@pryv/cmc` are linked with `npm link` (never a `file:` dependency in `package.json`), **in one command**, because a second `npm link` would remove the first link:
-
 ```sh
-git clone https://github.com/pryv/lib-js ../lib-js   # then check out the branch carrying @pryv/cmc 3.21.0
-(cd ../lib-js && npm install)
-npm run link:lib-js
-# = npm link --no-save ../lib-js/components/pryv ../lib-js/components/pryv-cmc
-```
-
-`npm run link:lib-js` also installs every other dependency. Linking `pryv` too keeps a single copy of it (the one `@pryv/cmc` resolves from the lib-js checkout). A later plain `npm install` removes the links: run `npm run link:lib-js` again. There is no `package-lock.json` yet: it is committed once `@pryv/cmc` 3.21.0 is on npm and the links are dropped.
-
-```sh
+npm ci              # install the locked dependencies
 npm run dev         # Vite dev server
 npm test            # unit and page tests (Vitest, jsdom)
 npm run e2e         # end-to-end tests (Playwright, Chromium), hermetic
@@ -96,11 +86,11 @@ npm run build       # type-check, then build into dist/
 
 Put development settings in `public/settings.json` (or `.env.local`). The sign-in page of the platform must accept the dev server's origin; serve it over HTTPS (for example with [backloop.dev](https://backloop.dev)) when the platform requires it.
 
-**Tests.** The unit and page tests run the real `@pryv/cmc` functions against a scripted stand-in for `pryv.Connection` (`src/test/fakePryv.ts`, `src/test/platform.ts`). The end-to-end tests run the built app in Chromium against a mocked platform (`e2e/mockPlatform.ts`): every Pryv endpoint is answered by the test and anything else is refused, so the suite needs no network and no core. Together they check that no token reaches the page, the address or the storage, and every test of both suites fails if a token or a request link appears in any console output (every console method in the page tests, every page's console messages in the end-to-end tests).
+**Tests.** The unit and page tests run the real `@pryv/cmc` functions against a scripted stand-in for `pryv.Connection` (`src/test/fakePryv.ts`, `src/test/platform.ts`). The end-to-end tests run the app (Vite dev server) in Chromium against a mocked platform (`e2e/mockPlatform.ts`): every Pryv endpoint is answered by the test and anything else is refused, so the suite needs no network and no core. Together they check that no token reaches the page, the address or the storage, and every test of both suites fails if a token or a request link appears in any console output (every console method in the page tests, every page's console messages in the end-to-end tests).
 
 ## Demo
 
-A live demo needs a platform running the open-pryv.io release that introduces group accounts, with a group account (team streams created), its administrator using app-web-user-account's "Group members" page, a member account and a patient account. It will be published with that release.
+A live demo needs a platform running open-pryv.io 2.0.0-rc.53 or later, with a group account (team streams created), its administrator using app-web-user-account's "Group members" page, a member account and a patient account. No public demo is published yet.
 
 ## License
 

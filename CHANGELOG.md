@@ -14,4 +14,4 @@
   - readable messages for the client API's error ids; tokens masked in any displayed content and never logged;
   - configuration through `settings.json` with build-time fallbacks; English catalog; themeable colour tokens;
   - unit and page tests (Vitest) and hermetic end-to-end tests (Playwright).
-- Requires `@pryv/cmc` 3.21.0 and the open-pryv.io release that introduces group accounts (not yet released).
+- Requires `@pryv/cmc` 3.21.0 or later (from npm, locked in `package-lock.json`) and open-pryv.io 2.0.0-rc.53 or later.

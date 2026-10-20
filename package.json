@@ -13,8 +13,7 @@
     "typecheck": "tsc -b",
     "preview": "vite preview",
     "test": "vitest run",
-    "e2e": "playwright test",
-    "link:lib-js": "npm link --no-save ../lib-js/components/pryv ../lib-js/components/pryv-cmc"
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@pryv/cmc": "^3.21.0",
