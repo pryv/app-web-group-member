@@ -236,7 +236,8 @@ export function serviceInfoUrlFromSearch(search: string): string | undefined {
  * The configuration with the platform the page address names, if it names a
  * valid one: the address wins over `settings.json`, which wins over the
  * environment. An invalid value is ignored. The value only says where to
- * fetch the service info from; nothing else is read from the address.
+ * fetch the service info from; nothing else in the configuration comes from
+ * the address (the display language's `?lang=` is read by i18n.ts).
  *
  * A platform outside `allowedServiceInfoUrls` (when set) is refused: no
  * platform is used, not even the default, and the sign-in page says the
