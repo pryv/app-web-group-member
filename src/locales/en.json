@@ -19,7 +19,7 @@
   "signIn": {
     "title": "Sign in",
     "intro": "Sign in with your own Pryv account to use {{appName}}: join your group, invite patients for it and read their data under your own name.",
-    "notConfigured": "This app is not configured: its settings name no Pryv platform (serviceInfoUrl).",
+    "notConfigured": "This app is not configured: it names no Pryv platform. Set serviceInfoUrl in its settings, or open it with pryvServiceInfoUrl in the address.",
     "expired": "Your session has ended. Sign in again.",
     "button": "Sign in with Pryv",
     "waiting": "Answer on the sign-in page. This page continues once you are signed in.",

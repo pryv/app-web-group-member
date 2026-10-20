@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { acceptedRequest, membershipAccept, mockPlatform, signedIn, TEAM_A } from "./mockPlatform";
+import { acceptedRequest, membershipAccept, mockPlatform, SERVICE_INFO_URL, signedIn, TEAM_A } from "./mockPlatform";
 
 /** No token-bearing value in the address, the storage the page keeps across tabs, or the page text. */
 async function expectTokenNowhere(page: Page, token: string) {
@@ -102,5 +102,26 @@ test.describe("[E2E] member app, against a mocked platform", () => {
     await expect(page.getByText("You left practice@example.test.", { exact: false })).toBeVisible();
     const revoke = p.calls.find((c) => c.params.type === "consent/revoke-cmc")!;
     expect(revoke).toMatchObject({ host: "bob.example.test", params: { streamIds: [":_cmc:apps:demo"], content: { accessId: "bc1" } } });
+  });
+
+  test("[E2E4] platform named by the address: with an empty settings.json, ?pryvServiceInfoUrl= signs in there", async ({ page, context }) => {
+    await mockPlatform(context);
+    // The shipped settings.json: no platform.
+    await context.route("**/settings.json", (route) => route.fulfill({ status: 200, contentType: "application/json", body: "{}" }));
+    await page.goto("/");
+    await expect(page.getByText("This app is not configured", { exact: false })).toBeVisible();
+    // An invalid value is ignored.
+    await page.goto("/?pryvServiceInfoUrl=javascript%3Aalert(1)");
+    await expect(page.getByText("This app is not configured", { exact: false })).toBeVisible();
+
+    await page.goto("/?pryvServiceInfoUrl=" + encodeURIComponent(SERVICE_INFO_URL));
+    const popupPromise = page.waitForEvent("popup");
+    await page.getByRole("button", { name: "Sign in with Pryv" }).click();
+    await popupPromise;
+    await expect(page.getByTestId("signed-in-as")).toHaveText("Signed in as bob");
+    // In-app navigation keeps the parameter in the address.
+    await page.getByRole("link", { name: "Join a group" }).click();
+    await expect(page.getByLabel("Group account (username)")).toBeVisible();
+    expect(new URL(page.url()).searchParams.get("pryvServiceInfoUrl")).toBe(SERVICE_INFO_URL);
   });
 });

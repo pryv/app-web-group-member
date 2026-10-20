@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `pryvServiceInfoUrl` query parameter (as in app-web-user-account): the page address can name the members' platform, for example `?pryvServiceInfoUrl=https%3A%2F%2Fsandbox.pryv.me%2Freg%2Fservice%2Finfo`. An absolute http(s) URL wins over `serviceInfoUrl` from `settings.json` (and its build-time fallback); any other value is ignored. It is used only to fetch the platform's service info. The GitHub Pages copy, which ships an empty `settings.json`, can now be opened against a platform.
+
 ## 0.1.0 - 2026-10-20
 
 ### Added

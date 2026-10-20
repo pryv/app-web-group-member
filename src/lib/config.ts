@@ -3,7 +3,8 @@
  *
  * Read once at boot from `settings.json`, served next to the bundle; each key
  * falls back to the build-time environment (`VITE_*`, see `.env.example`),
- * then to the default below. Nothing here is a secret: the app holds no
+ * then to the default below. The page address may name the platform
+ * (`?pryvServiceInfoUrl=`), over both (see `withAddressPlatform`). Nothing here is a secret: the app holds no
  * credential of its own.
  *
  *   {
@@ -203,6 +204,28 @@ export function parseConfig(raw: unknown, env: Record<string, unknown> = {}): Ap
   };
 }
 
+/** Query parameter naming the platform, as for app-web-user-account. */
+export const SERVICE_INFO_URL_PARAM = "pryvServiceInfoUrl";
+
+/**
+ * The platform named by the page address (`?pryvServiceInfoUrl=`), when it is
+ * an absolute http(s) URL; otherwise undefined.
+ */
+export function serviceInfoUrlFromSearch(search: string): string | undefined {
+  return httpUrl(new URLSearchParams(search).get(SERVICE_INFO_URL_PARAM));
+}
+
+/**
+ * The configuration with the platform the page address names, if it names a
+ * valid one: the address wins over `settings.json`, which wins over the
+ * environment. An invalid value is ignored. The value only says where to
+ * fetch the service info from; nothing else is read from the address.
+ */
+export function withAddressPlatform(config: AppConfig, search: string): AppConfig {
+  const fromAddress = serviceInfoUrlFromSearch(search);
+  return fromAddress ? { ...config, serviceInfoUrl: fromAddress } : config;
+}
+
 /** Longest wait for `settings.json` before rendering with the environment alone. */
 export const BOOT_FETCH_TIMEOUT_MS = 4000;
 
@@ -222,6 +245,9 @@ export async function loadConfig(fetchImpl: typeof fetch = fetch): Promise<AppCo
   } finally {
     clearTimeout(timer);
   }
-  current = parseConfig(body, envSettings(import.meta.env as Record<string, string | undefined>));
+  current = withAddressPlatform(
+    parseConfig(body, envSettings(import.meta.env as Record<string, string | undefined>)),
+    window.location.search,
+  );
   return current;
 }

@@ -54,7 +54,7 @@ The app reads `settings.json`, served next to `index.html` (the shipped file is 
 
 | Key | Env fallback | Default | Meaning |
 |---|---|---|---|
-| `serviceInfoUrl` | `VITE_SERVICE_INFO_URL` | none (required) | The members' Pryv platform (`service/info`). |
+| `serviceInfoUrl` | `VITE_SERVICE_INFO_URL` | none (required, unless the address names the platform) | The members' Pryv platform (`service/info`). The address's `pryvServiceInfoUrl` parameter wins over it (see below). |
 | `accountAppUrl` | `VITE_ACCOUNT_APP_URL` | derived | Base URL of the group platform's account app ([app-web-user-account](https://github.com/pryv/app-web-user-account)), like `authUrl` for `@pryv/cmc`'s accept hand-off. Query parameters of the base (for example `pryvServiceInfoUrl`) are kept. Unset: when the group is on the member's platform (the member's API host is the group's host or under it), the account app next to the page the member signed in on, with `pryvServiceInfoUrl` set to the member's platform; for a group elsewhere, no link is derived and only the bare request link is shown. |
 | `appCode` | `VITE_APP_CODE` | `group-member` | CMC app code: the app's scope is `:_cmc:apps:<appCode>` on the member's account, and the default patient-side scope in the patient's link. |
 | `appName` | `VITE_APP_NAME` | `Group member` | Shown in the header and on the sign-in page. |
@@ -65,6 +65,14 @@ The app reads `settings.json`, served next to `index.html` (the shipped file is 
 | `invite.permissions` | | `diary` at `read` | What a patient invite asks for (stream permissions, `read` or `contribute`, no `:_cmc:` stream). |
 | `invite.consent` | | none | The invite's consent text, per language. Say who the group is and that its members read under their own names. |
 | `memberAccessTtl` | | `3600` | Lifetime, in seconds, asked for each member access (the group's core bounds it: 60 s to 7 days by default). |
+
+**Platform in the address.** The page address can name the members' platform with the `pryvServiceInfoUrl` query parameter (the same parameter as app-web-user-account), before the `#`:
+
+```
+https://pryv.github.io/app-web-group-member/?pryvServiceInfoUrl=https%3A%2F%2Fsandbox.pryv.me%2Freg%2Fservice%2Finfo
+```
+
+When it is an absolute http(s) URL it wins over `serviceInfoUrl` (and its env fallback); any other value is ignored and `serviceInfoUrl` applies. With neither, the app says it is not configured. It is read once when the page loads and stays in the address across the app's pages (they are hash routes). The value is used only to fetch the platform's service info, from which the sign-in request goes out; nothing else is read from the address. A link naming a platform makes the member sign in there, on that platform's own sign-in page, so share links naming the platforms you trust.
 
 Invalid values are dropped, never guessed. The app uses hash routes (`#/groups/...`), so it can be served from any path of any static host; no address carries a credential.
 
@@ -115,7 +123,7 @@ Releases are cut from `main`, with every check green (`npm run lint`, `npm test`
    git push origin "$commit:refs/heads/gh-pages"
    ```
 
-   The Pages copy ships the default `settings.json` (`{}`): it names no platform and says so on its first page. A deployment serves its own `settings.json` next to `index.html` (see [Configuration](#configuration)).
+   The Pages copy ships the default `settings.json` (`{}`): it names no platform and says so on its first page, unless the address names one (`?pryvServiceInfoUrl=`, see [Configuration](#configuration)). A deployment serves its own `settings.json` next to `index.html` (see [Configuration](#configuration)).
 
 ## Demo
 
