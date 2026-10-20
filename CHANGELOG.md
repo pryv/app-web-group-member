@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `allowedServiceInfoUrls` in `settings.json` (as in app-web-user-account): when set, the page address's `pryvServiceInfoUrl` may name only those platforms and `serviceInfoUrl` (always allowed); a link naming another platform is refused before any request is sent to it, and the sign-in page says the page does not serve the platform named in the link. `[]` (or a list with no valid entry) means `serviceInfoUrl` only; the key absent means any platform, as before. URLs are compared once normalised, never by prefix. Recommended for every single-platform deployment. The GitHub Pages copy keeps `{}` and serves any platform.
+
 ## 0.1.1 - 2026-10-20
 
 ### Added

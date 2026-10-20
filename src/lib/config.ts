@@ -9,6 +9,7 @@
  *
  *   {
  *     "serviceInfoUrl": "https://reg.example.com/service/info",
+ *     "allowedServiceInfoUrls": [],
  *     "accountAppUrl": "https://account.example.com/",
  *     "appCode": "practice",
  *     "appName": "Practice",
@@ -40,6 +41,14 @@ export interface AppConfig {
   /** The member's platform (`service/info`). Required. */
   serviceInfoUrl: string | null;
   /**
+   * When set, the only platforms a page address may name (with
+   * `serviceInfoUrl`, always allowed). A link naming another one is refused.
+   * Null (key absent): any platform. Read from `settings.json` only.
+   */
+  allowedServiceInfoUrls: string[] | null;
+  /** The page address named a platform this deployment does not serve. */
+  platformRefused: boolean;
+  /**
    * Base URL of the group platform's account app (app-web-user-account).
    * The membership QR code opens `<accountAppUrl>account/memberships`. Query
    * parameters of the base are kept. Null: derived from the sign-in page.
@@ -64,6 +73,8 @@ const SLUG = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
 export const DEFAULT_CONFIG: AppConfig = {
   serviceInfoUrl: null,
+  allowedServiceInfoUrls: null,
+  platformRefused: false,
   accountAppUrl: null,
   appCode: "group-member",
   appName: "Group member",
@@ -192,6 +203,12 @@ export function parseConfig(raw: unknown, env: Record<string, unknown> = {}): Ap
   const ttl = pick("memberAccessTtl");
   return {
     serviceInfoUrl: httpUrl(pick("serviceInfoUrl")) ?? null,
+    // Kept even when empty: a restriction that parses to nothing means "the
+    // default platform only", never "no restriction" (fail closed).
+    allowedServiceInfoUrls: Array.isArray(file.allowedServiceInfoUrls)
+      ? file.allowedServiceInfoUrls.map(httpUrl).filter((u): u is string => u != null)
+      : null,
+    platformRefused: false,
     accountAppUrl: httpUrl(pick("accountAppUrl")) ?? null,
     appCode,
     appName,
@@ -220,10 +237,37 @@ export function serviceInfoUrlFromSearch(search: string): string | undefined {
  * valid one: the address wins over `settings.json`, which wins over the
  * environment. An invalid value is ignored. The value only says where to
  * fetch the service info from; nothing else is read from the address.
+ *
+ * A platform outside `allowedServiceInfoUrls` (when set) is refused: no
+ * platform is used, not even the default, and the sign-in page says the
+ * link names a platform this deployment does not serve.
  */
 export function withAddressPlatform(config: AppConfig, search: string): AppConfig {
   const fromAddress = serviceInfoUrlFromSearch(search);
-  return fromAddress ? { ...config, serviceInfoUrl: fromAddress } : config;
+  if (!fromAddress) return config;
+  if (!isAllowedServiceInfoUrl(config, fromAddress)) return { ...config, serviceInfoUrl: null, platformRefused: true };
+  return { ...config, serviceInfoUrl: fromAddress };
+}
+
+/** Whether two URL strings name the same URL once normalised. */
+export function sameUrl(a: string, b: string): boolean {
+  try {
+    return new URL(a).href === new URL(b).href;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Whether this deployment may talk to the platform at `serviceInfoUrl`.
+ * Always true unless `allowedServiceInfoUrls` is set; then only those and the
+ * default `serviceInfoUrl` are allowed (an empty list: the default only).
+ */
+export function isAllowedServiceInfoUrl(config: AppConfig, serviceInfoUrl: string): boolean {
+  const allowed = config.allowedServiceInfoUrls;
+  if (!allowed) return true;
+  const candidates = config.serviceInfoUrl ? [...allowed, config.serviceInfoUrl] : allowed;
+  return candidates.some((c) => sameUrl(c, serviceInfoUrl));
 }
 
 /** Longest wait for `settings.json` before rendering with the environment alone. */

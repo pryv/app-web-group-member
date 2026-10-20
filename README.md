@@ -38,6 +38,7 @@ The app reads `settings.json`, served next to `index.html` (the shipped file is 
 ```json
 {
   "serviceInfoUrl": "https://reg.example.com/service/info",
+  "allowedServiceInfoUrls": [],
   "accountAppUrl": "https://account.example.com/",
   "appCode": "practice",
   "appName": "Practice",
@@ -55,6 +56,7 @@ The app reads `settings.json`, served next to `index.html` (the shipped file is 
 | Key | Env fallback | Default | Meaning |
 |---|---|---|---|
 | `serviceInfoUrl` | `VITE_SERVICE_INFO_URL` | none (required, unless the address names the platform) | The members' Pryv platform (`service/info`). The address's `pryvServiceInfoUrl` parameter wins over it (see below). |
+| `allowedServiceInfoUrls` | | none (any platform) | The only platforms the address's `pryvServiceInfoUrl` may name, besides `serviceInfoUrl` (always allowed). `[]`: `serviceInfoUrl` only. Recommended for every single-platform deployment (see below). |
 | `accountAppUrl` | `VITE_ACCOUNT_APP_URL` | derived | Base URL of the group platform's account app ([app-web-user-account](https://github.com/pryv/app-web-user-account)), like `authUrl` for `@pryv/cmc`'s accept hand-off. Query parameters of the base (for example `pryvServiceInfoUrl`) are kept. Unset: when the group is on the member's platform (the member's API host is the group's host or under it), the account app next to the page the member signed in on, with `pryvServiceInfoUrl` set to the member's platform; for a group elsewhere, no link is derived and only the bare request link is shown. |
 | `appCode` | `VITE_APP_CODE` | `group-member` | CMC app code: the app's scope is `:_cmc:apps:<appCode>` on the member's account, and the default patient-side scope in the patient's link. |
 | `appName` | `VITE_APP_NAME` | `Group member` | Shown in the header and on the sign-in page. |
@@ -72,7 +74,9 @@ The app reads `settings.json`, served next to `index.html` (the shipped file is 
 https://pryv.github.io/app-web-group-member/?pryvServiceInfoUrl=https%3A%2F%2Fsandbox.pryv.me%2Freg%2Fservice%2Finfo
 ```
 
-When it is an absolute http(s) URL it wins over `serviceInfoUrl` (and its env fallback); any other value is ignored and `serviceInfoUrl` applies. With neither, the app says it is not configured. It is read once when the page loads and stays in the address across the app's pages (they are hash routes). The value is used only to fetch the platform's service info, from which the sign-in request goes out; nothing else is read from the address. A link naming a platform makes the member sign in there, on that platform's own sign-in page, so share links naming the platforms you trust.
+When it is an absolute http(s) URL it wins over `serviceInfoUrl` (and its env fallback); any other value is ignored and `serviceInfoUrl` applies. With neither, the app says it is not configured. It is read once when the page loads and stays in the address across the app's pages (they are hash routes). The value is used only to fetch the platform's service info, from which the sign-in request goes out; nothing else is read from the address.
+
+A link naming a platform makes the member sign in there, on that platform's own sign-in page. **A deployment serving one platform should set `allowedServiceInfoUrls`** (as in app-web-user-account): a link naming any platform other than those listed and `serviceInfoUrl` is then refused (the page says it does not serve the platform named in the link, and nothing is sent to it), so a crafted link on your domain cannot send members to sign in on someone else's server. `[]` (or a list with no valid entry) means `serviceInfoUrl` only; the key absent means any platform. URLs are compared once normalised (exact match, never a prefix). The GitHub Pages copy ships `{}`, so it serves any platform.
 
 Invalid values are dropped, never guessed. The app uses hash routes (`#/groups/...`), so it can be served from any path of any static host; no address carries a credential.
 

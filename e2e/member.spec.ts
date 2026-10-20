@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { acceptedRequest, membershipAccept, mockPlatform, SERVICE_INFO_URL, signedIn, TEAM_A } from "./mockPlatform";
+import { acceptedRequest, membershipAccept, mockPlatform, SERVICE_INFO_URL, SETTINGS, signedIn, TEAM_A } from "./mockPlatform";
 
 /** No token-bearing value in the address, the storage the page keeps across tabs, or the page text. */
 async function expectTokenNowhere(page: Page, token: string) {
@@ -123,5 +123,21 @@ test.describe("[E2E] member app, against a mocked platform", () => {
     await page.getByRole("link", { name: "Join a group" }).click();
     await expect(page.getByLabel("Group account (username)")).toBeVisible();
     expect(new URL(page.url()).searchParams.get("pryvServiceInfoUrl")).toBe(SERVICE_INFO_URL);
+  });
+
+  test("[E2E5] allowedServiceInfoUrls: a link naming another platform is refused before any request to it", async ({ page, context }) => {
+    await mockPlatform(context);
+    await context.route("**/settings.json", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...SETTINGS, allowedServiceInfoUrls: [] }) }),
+    );
+    const hosts: string[] = [];
+    page.on("request", (r) => hosts.push(new URL(r.url()).host));
+    await page.goto("/?pryvServiceInfoUrl=" + encodeURIComponent("https://evil.example.test/service/info"));
+    await expect(page.getByText("This page does not serve the platform named in the link.", { exact: false })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign in with Pryv" })).toHaveCount(0);
+    expect(hosts).not.toContain("evil.example.test");
+    // The deployment's own platform is always allowed.
+    await page.goto("/?pryvServiceInfoUrl=" + encodeURIComponent(SERVICE_INFO_URL));
+    await expect(page.getByRole("button", { name: "Sign in with Pryv" })).toBeVisible();
   });
 });

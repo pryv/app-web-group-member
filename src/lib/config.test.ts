@@ -111,3 +111,51 @@ describe("[CFL] loading at boot", () => {
     expect((await loadConfig(settings({ serviceInfoUrl: "https://reg.example.com/service/info" }))).serviceInfoUrl).toBe("https://reg.example.com/service/info");
   });
 });
+
+describe("[CFA] allowedServiceInfoUrls: the platforms a page address may name", () => {
+  const OWN = "https://reg.example.com/service/info";
+  const OTHER = "https://reg.partner.example/service/info";
+  const EVIL = "https://evil.example/service/info";
+  const q = (v: string) => "?pryvServiceInfoUrl=" + encodeURIComponent(v);
+
+  it("[CFA1] read from settings.json: invalid entries dropped, an empty list kept, absent = null", () => {
+    expect(parseConfig({ allowedServiceInfoUrls: [OTHER, "javascript:x", 3] }).allowedServiceInfoUrls).toEqual([OTHER]);
+    expect(parseConfig({ allowedServiceInfoUrls: [] }).allowedServiceInfoUrls).toEqual([]);
+    expect(parseConfig({ allowedServiceInfoUrls: ["not a url"] }).allowedServiceInfoUrls).toEqual([]);
+    expect(parseConfig({}).allowedServiceInfoUrls).toBeNull();
+    expect(parseConfig({ allowedServiceInfoUrls: OTHER }).allowedServiceInfoUrls).toBeNull();
+  });
+
+  it("[CFA2] a listed platform is accepted; the default serviceInfoUrl always is", () => {
+    const base = parseConfig({ serviceInfoUrl: OWN, allowedServiceInfoUrls: [OTHER] });
+    expect(withAddressPlatform(base, q(OTHER))).toMatchObject({ serviceInfoUrl: OTHER, platformRefused: false });
+    expect(withAddressPlatform(base, q(OWN))).toMatchObject({ serviceInfoUrl: OWN, platformRefused: false });
+    // Compared once normalised (host case, default port), never by prefix.
+    expect(withAddressPlatform(base, q("https://REG.partner.example:443/service/info")).platformRefused).toBe(false);
+    for (const near of [OTHER + "?x=1", "https://reg.partner.example:8443/service/info", "https://user@reg.partner.example/service/info", OTHER + "/../x"]) {
+      expect(withAddressPlatform(base, q(near)).platformRefused, near).toBe(true);
+    }
+  });
+
+  it("[CFA3] an unlisted platform is refused: no platform at all, not even the default", () => {
+    const base = parseConfig({ serviceInfoUrl: OWN, allowedServiceInfoUrls: [OTHER] });
+    expect(withAddressPlatform(base, q(EVIL))).toMatchObject({ serviceInfoUrl: null, platformRefused: true });
+    // An invalid value is still ignored: the default applies.
+    expect(withAddressPlatform(base, q("javascript:alert(1)"))).toMatchObject({ serviceInfoUrl: OWN, platformRefused: false });
+    expect(withAddressPlatform(base, "")).toMatchObject({ serviceInfoUrl: OWN, platformRefused: false });
+  });
+
+  it("[CFA4] an empty or all-invalid list means the default platform only, never unrestricted", () => {
+    for (const list of [[], ["javascript:x", "not a url"]]) {
+      const base = parseConfig({ serviceInfoUrl: OWN, allowedServiceInfoUrls: list });
+      expect(withAddressPlatform(base, q(OWN)).serviceInfoUrl).toBe(OWN);
+      expect(withAddressPlatform(base, q(OTHER)).platformRefused).toBe(true);
+    }
+    expect(withAddressPlatform(parseConfig({ allowedServiceInfoUrls: [] }), q(OWN)).platformRefused).toBe(true);
+  });
+
+  it("[CFA5] the key absent: any platform", () => {
+    expect(withAddressPlatform(parseConfig({ serviceInfoUrl: OWN }), q(EVIL))).toMatchObject({ serviceInfoUrl: EVIL, platformRefused: false });
+    expect(withAddressPlatform(parseConfig({}), q(EVIL)).serviceInfoUrl).toBe(EVIL);
+  });
+});

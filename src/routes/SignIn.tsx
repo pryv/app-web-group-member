@@ -65,7 +65,7 @@ export default function SignIn({ expired }: { expired?: boolean }) {
   if (config.serviceInfoUrl == null) {
     return (
       <Card>
-        <Alert tone="danger">{t("signIn.notConfigured")}</Alert>
+        <Alert tone="danger">{t(config.platformRefused ? "signIn.platformNotAllowed" : "signIn.notConfigured")}</Alert>
       </Card>
     );
   }

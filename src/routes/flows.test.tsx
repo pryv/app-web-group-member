@@ -71,6 +71,13 @@ describe("[UI] member app pages", () => {
     expect(await screen.findByText(/This app is not configured/)).toBeTruthy();
   });
 
+  it("[UI1b] signed out, the address names a platform the deployment does not serve: refused, no sign-in", async () => {
+    _setConfigForTest({ serviceInfoUrl: null, platformRefused: true });
+    renderAt("/");
+    expect(await screen.findByText(/does not serve the platform named in the link/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Sign in with Pryv" })).toBeNull();
+  });
+
   it("[UI2] join: the request is written on the member's account, then handed over by QR and links", async () => {
     signIn();
     const state = installPlatform();
