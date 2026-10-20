@@ -8,7 +8,7 @@ import { InviteHandoff, MembershipHandoff } from "../components/Handoff";
 import { useConfirm } from "../components/ConfirmDialog";
 import { PhaseBadge } from "./Groups";
 import { cmc, cmcErrorIds, type Connection } from "../lib/pryvClient";
-import { getConfig } from "../lib/config";
+import { getConfig, httpUrl } from "../lib/config";
 import { useSignedIn } from "../lib/session";
 import { useGroups } from "../lib/groupsContext";
 import { acceptanceTiming, isAuthError, type GroupRecord } from "../lib/groups";
@@ -140,7 +140,10 @@ function TeamSection({
     setError(null);
     try {
       const res = await invitePatient(membership, { appCode: config.appCode, team, invite: config.invite });
-      setCreated({ capabilityUrl: res.capabilityUrl });
+      // Only an http(s) link is ever shown or turned into a QR code.
+      const capabilityUrl = httpUrl(res.capabilityUrl);
+      if (capabilityUrl == null) throw new Error("the invite link the server answered is not an http(s) URL");
+      setCreated({ capabilityUrl });
       onChanged();
     } catch (err) {
       console.warn("group-member: invite failed:", loggableError(err));

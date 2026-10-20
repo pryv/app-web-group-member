@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- An invite or membership link is shown, copied or turned into a QR code only when it is an http(s) URL (as in app-web-user-account); a newly created invite whose link is not one is reported as an error.
+
 ## 0.1.2 - 2026-10-20
 
 ### Added

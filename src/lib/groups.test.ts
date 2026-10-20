@@ -48,6 +48,14 @@ describe("[GRP] the member's groups", () => {
     });
   });
 
+  it("[GRP9] a waiting request's link is shown only when it is an http(s) URL", () => {
+    for (const capabilityUrl of ["javascript:alert(1)", "data:text/html,x", "/relative", "  "]) {
+      const [g] = buildGroupRecords([request("r9", { capabilityUrl })], [], [], "demo", { r9: PRACTICE }, NOW);
+      expect(g.phase).toBe("waiting");
+      expect(g.capabilityUrl).toBeNull();
+    }
+  });
+
   it("[GRP2] an accepted request becomes a membership, its endpoint read from the inbox by request id", () => {
     const records = buildGroupRecords(
       [request("r1", { status: "accepted", acceptedBy: PRACTICE, backChannelAccessId: "bc1" })],

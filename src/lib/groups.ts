@@ -12,6 +12,7 @@
  *   arrives as a `consent/revoke-cmc` in the inbox.
  */
 import { cmc, type CmcActor, type Connection, type InviteStatus } from "./pryvClient";
+import { httpUrl } from "./config";
 
 export type GroupPhase = "member" | "arriving" | "waiting" | "ended";
 
@@ -141,7 +142,8 @@ export function buildGroupRecords(
       status,
       phase,
       requestedTeams: permissions.map((p) => p.streamId).filter((s): s is string => typeof s === "string"),
-      capabilityUrl: phase === "waiting" ? str(c.capabilityUrl) : null,
+      // Only an http(s) link is ever shown or turned into a QR code.
+      capabilityUrl: phase === "waiting" ? (httpUrl(c.capabilityUrl) ?? null) : null,
       expiresAt: num(c.capabilityExpiresAt) ?? num(request.expiresAt),
       requestedAt: num(ev.time),
       acceptedAt: num(c.acceptedAt),
