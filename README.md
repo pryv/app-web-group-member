@@ -88,6 +88,35 @@ Put development settings in `public/settings.json` (or `.env.local`). The sign-i
 
 **Tests.** The unit and page tests run the real `@pryv/cmc` functions against a scripted stand-in for `pryv.Connection` (`src/test/fakePryv.ts`, `src/test/platform.ts`). The end-to-end tests run the app (Vite dev server) in Chromium against a mocked platform (`e2e/mockPlatform.ts`): every Pryv endpoint is answered by the test and anything else is refused, so the suite needs no network and no core. Together they check that no token reaches the page, the address or the storage, and every test of both suites fails if a token or a request link appears in any console output (every console method in the page tests, every page's console messages in the end-to-end tests).
 
+## Release
+
+Releases are cut from `main`, with every check green (`npm run lint`, `npm test`, `npm run e2e`, `npm run build`, `npm audit`).
+
+1. Set the version: `npm version <x.y.z> --no-git-tag-version` (updates `package.json` and `package-lock.json`; skip it when `package.json` already holds the version), rename `## Unreleased` in `CHANGELOG.md` to `## <x.y.z> - <yyyy-mm-dd>`, commit as `release: <x.y.z> (<summary>)`.
+2. Tag and push: `git tag -a v<x.y.z> -m v<x.y.z>`, then `git push origin main v<x.y.z>`.
+3. Build from the lockfile: `npm ci && npm run build`. The build uses relative paths and hash routes, so the same `dist/` is served from any path of any static host.
+4. GitHub release, with the bundle attached:
+
+   ```sh
+   COPYFILE_DISABLE=1 tar --no-xattrs --no-mac-metadata -czf app-web-group-member-<x.y.z>.tar.gz -C dist .   # macOS; on Linux: tar -czf ...
+   gh release create v<x.y.z> app-web-group-member-<x.y.z>.tar.gz --title v<x.y.z> --notes-file <the version's CHANGELOG section>
+   ```
+
+5. GitHub Pages copy (branch `gh-pages`, served at <https://pryv.github.io/app-web-group-member/>): `dist/` plus `.nojekyll` becomes the branch's next commit, without checking the branch out:
+
+   ```sh
+   git fetch origin
+   touch dist/.nojekyll
+   export GIT_INDEX_FILE="$(mktemp -d)/index"
+   (cd dist && git --git-dir=../.git --work-tree=. add -A)
+   parent=$(git rev-parse -q --verify origin/gh-pages)
+   commit=$(git commit-tree "$(git write-tree)" ${parent:+-p "$parent"} -m "publish app-web-group-member $(git rev-parse --short HEAD): v<x.y.z> (GitHub Pages copy)")
+   unset GIT_INDEX_FILE
+   git push origin "$commit:refs/heads/gh-pages"
+   ```
+
+   The Pages copy ships the default `settings.json` (`{}`): it names no platform and says so on its first page. A deployment serves its own `settings.json` next to `index.html` (see [Configuration](#configuration)).
+
 ## Demo
 
 A live demo needs a platform running open-pryv.io 2.0.0-rc.53 or later, with a group account (team streams created), its administrator using app-web-user-account's "Group members" page, a member account and a patient account. No public demo is published yet.
