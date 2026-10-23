@@ -1,7 +1,7 @@
 {
   "name": "app-web-group-member",
   "description": "Reference static web app for members of a Pryv group account: join a group, invite patients for it and read a patient's data under an access that names the member. No backend.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": true,
   "license": "BSD-3-Clause",
   "author": "Pryv <info@pryv.com> (https://pryv.com)",
