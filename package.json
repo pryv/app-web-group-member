@@ -16,10 +16,10 @@
     "e2e": "playwright test"
   },
   "dependencies": {
-    "@pryv/cmc": "^3.21.0",
+    "@pryv/cmc": "^3.23.1",
     "i18next": "^26.4.2",
     "lucide-react": "^1.21.0",
-    "pryv": "^3.17.2",
+    "pryv": "^3.20.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
